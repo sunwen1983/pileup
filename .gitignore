@@ -3,3 +3,10 @@ __pycache__/
 .env
 .env.*
 traces/
+
+# demo video-edit: keep only the finished videos + end card; intermediates stay local
+demo/video-edit/*
+!demo/video-edit/pileup-demo.mp4
+!demo/video-edit/pileup-demo-v2.mp4
+!demo/video-edit/pileup-demo-v3.mp4
+!demo/video-edit/endcard.png
