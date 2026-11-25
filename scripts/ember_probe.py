@@ -18,12 +18,22 @@ import time
 import urllib.error
 import urllib.request
 
-sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
-from dynamic_credentials import (
-    DynamicCredentialError,
-    add_surrogate_to_request,
-    read_json_response,
-)
+try:
+    # VM-only: the surrogate lives under /opt/muse, which a laptop
+    # (or fly.io) does not have. Guard the import so the probe still
+    # runs off-VM with a real MODEL_API_KEY.
+    sys.path.insert(0, "/opt/muse/skills/custom-connector-setup/bin")
+    from dynamic_credentials import (
+        DynamicCredentialError,
+        add_surrogate_to_request,
+        read_json_response,
+    )
+    _SURROGATE_AVAILABLE = True
+except ImportError:
+    _SURROGATE_AVAILABLE = False
+
+    def read_json_response(response):
+        return json.loads(response.read().decode("utf-8"))
 
 CONNECTION = "custom.meta-model-api"
 API_URL = "https://api.meta.ai/v1/responses"
@@ -49,6 +59,8 @@ def build_request(payload: dict) -> urllib.request.Request:
     if key:
         request.add_header("Authorization", f"Bearer {key}")
     else:
+        if not _SURROGATE_AVAILABLE:
+            raise RuntimeError("no Ember credential: set MODEL_API_KEY")
         add_surrogate_to_request(
             request, CONNECTION, allowed_hosts=ALLOWED_HOSTS)
     return request
