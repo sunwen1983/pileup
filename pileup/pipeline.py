@@ -5,6 +5,7 @@ wiring (shapes, ordering, conflicts); the model owns the judgment.
 """
 from __future__ import annotations
 
+import datetime
 import json
 
 from .client import build_input
@@ -19,12 +20,13 @@ CLASSIFY_PROMPT = (
 EXTRACT_PROMPT = (
     "EXTRACT-FIELDS\n"
     "You extract structured fields from one pile item of type {item_type}. "
-    "Reply with JSON only, no other text:\n"
+    "Today is {today}. Reply with JSON only, no other text:\n"
     '{"dates": [{"text": ..., "iso": "YYYY-MM-DDTHH:MM:SS or null"}], '
     '"amounts": [{"text": ..., "value": number, "currency": "USD"}], '
     '"people": [...], '
     '"actions": [{"text": ..., "due": "YYYY-MM-DD or null"}]}. '
-    "Use null when a field is absent."
+    "Use null when a field is absent. When a date has no year, assume "
+    "the current year; when it has no time, use 09:00."
 )
 
 PLAN_PROMPT = (
@@ -33,8 +35,9 @@ PLAN_PROMPT = (
     "no other text:\n"
     '{"actions": [{"text": ..., "due": "YYYY-MM-DD or null", '
     '"source": item id}], "conflicts": [{"text": ...}]}. '
-    "Order actions by due date. Flag same-date overlaps, missing dates, "
-    "and missing amounts as conflicts."
+    "Order actions by due date. Flag only real conflicts: two actions "
+    "due on the same date, or an action whose due date is already past. "
+    "A missing date or a missing amount is not a conflict."
 )
 
 
@@ -56,7 +59,9 @@ def classify(client, item: dict) -> dict:
 
 def extract(client, item: dict, item_type: str) -> dict:
     # .replace, not .format: the prompt's literal JSON braces must survive.
-    prompt = EXTRACT_PROMPT.replace("{item_type}", item_type)
+    prompt = (EXTRACT_PROMPT
+              .replace("{item_type}", item_type)
+              .replace("{today}", datetime.date.today().isoformat()))
     parts = [{"type": "input_text", "text": prompt}]
     parts += build_input(item)
     return _as_json(client.complete("extract", parts), "extractor")
