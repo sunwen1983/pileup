@@ -113,14 +113,15 @@ class Handler(BaseHTTPRequestHandler):
         })
 
 
-def create_server(port: int = 0) -> ThreadingHTTPServer:
-    return ThreadingHTTPServer(("127.0.0.1", port), Handler)
+def create_server(port: int = 0, host: str | None = None) -> ThreadingHTTPServer:
+    host = host or os.environ.get("HOST", "0.0.0.0")
+    return ThreadingHTTPServer((host, port), Handler)
 
 
 def main() -> None:
     port = int(os.environ.get("PORT", "8000"))
     server = create_server(port)
-    print(f"PileUp on http://127.0.0.1:{server.server_address[1]} "
+    print(f"PileUp on http://{server.server_address[0]}:{server.server_address[1]} "
           f"(transport={os.environ.get('PILEUP_TRANSPORT', 'mock')})")
     server.serve_forever()
 

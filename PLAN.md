@@ -80,7 +80,7 @@ a second pile type.
 | Slice | Dates | Exit |
 |---|---|---|
 | E1 Ember wiring | Nov 25–26 | one text + one image item end-to-end, tokens + $ recorded |
-| E2 team + tools + UI | Nov 27–28 | full 5-item pile runs; plan + trace + cost meter visible |
+| E2 team + tools + UI | Nov 27–28 | full 5-item pile runs; plan + trace + cost meter visible. Deploy to fly.io is REQUIRED for live Ember calls (this VM's egress blocks api.meta.ai since ~Nov 24; see DEPLOY.md). |
 | E3 harden (light) | Nov 29–30 | demo pile frozen and rehearsed 3×; in-window Ember spend ≤ $10 verified |
 | E4 video + submit | Dec 1–2 | video < 3 min (screen + voiceover, no on-camera needed); repo + description + traces + usage screenshot submitted by Dec 2 8:00 PM CT |
 
