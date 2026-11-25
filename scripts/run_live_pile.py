@@ -49,6 +49,19 @@ def main():
     print(f"transport: {body['transport']}")
     print(f"total_cost_usd: {body['total_cost_usd']}")
     print(f"trace_file: {body['trace_file']}")
+    print("items:")
+    for item in body["items"]:
+        extracted = item.get("extracted", {})
+        dates = ", ".join(
+            f"{d['text']} -> {d.get('iso')}"
+            for d in extracted.get("dates", []))
+        actions = ", ".join(
+            f"{a['text']} (due {a.get('due')})"
+            for a in extracted.get("actions", []))
+        print(f"  - {item['id']}: type={item.get('type')} "
+              f"confidence={item.get('confidence')}")
+        print(f"    dates: {dates or '(none)'}")
+        print(f"    actions: {actions or '(none)'}")
     print("plan actions:")
     for action in body["plan"]["actions"]:
         print(f"  - {action['text']} (due {action['due']}, "

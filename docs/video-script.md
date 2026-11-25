@@ -13,9 +13,12 @@ The demo must show only functionality built in the hackathon window
 4. Chat screenshot — landlord: water heater flush done, check the tap aerator
 5. Handwritten note — Amelia piano Mon 4:30, bring the blue book
 
-Conflict the plan must catch: two things land on Dec 5 (bill due + the
-plumber call is due before Friday). Target pile cost: under $0.05
-(the on-screen meter shows the real number).
+The plan orders actions by date (plumber Nov 27, piano book Nov 30,
+bill Dec 5, fair Dec 12) and splits them: dated actions become calendar
+events, undated ones become reminders. This pile has no same-date
+overlap, so the planner reports no conflicts — the conflict flagging
+is a capability, not something this pile triggers. Target pile cost:
+under $0.05 (the on-screen meter shows the real number).
 
 ## Beats
 
@@ -25,7 +28,7 @@ plumber call is due before Friday). Target pile cost: under $0.05
 | 0:12–0:30 | Close-ups of the items | "Each one hides a date, an amount, or something I have to do. Reading them all and making a plan takes longer than doing the chores." |
 | 0:30–0:50 | PileUp UI, empty state | "PileUp takes the whole pile and turns it into a plan. Three Ember agents do the work: one classifies each item, one pulls out the dates, amounts and actions, and one orders everything and flags conflicts." |
 | 0:50–1:35 | Upload the 5 items (or Load demo pile), click Run; traces appear live | "I drop the pile in and hit run. Watch the trace: every agent call, its tokens, and its cost, live. Nothing is hidden." |
-| 1:35–2:20 | The plan, ordered by date; the Dec 5 conflict; the Executed section (calendar events created) | "Here's the plan, ordered by date. It caught the clash — two things on December 5th. And it didn't just list the work: it created the calendar events and reminders, through real MCP tools." |
+| 1:35–2:20 | The plan, ordered by date; the Executed section (calendar events created for dated actions, reminders for undated ones) | "Here's the plan, ordered by date. Dated actions became calendar events; the ones without a date became reminders — all through real M C P tools." |
 | 2:20–2:45 | The cost meter | "The whole pile cost less than five cents. Ember charges ten cents per million input tokens and fifty cents per million output — at this price, the messy pile is a rounding error." |
 | 2:45–3:00 | PileUp title + repo URL | "PileUp. Dump the pile in, get a plan out. Built with Muse Ember, in the hackathon window." |
 

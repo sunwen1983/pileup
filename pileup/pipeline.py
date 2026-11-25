@@ -26,7 +26,9 @@ EXTRACT_PROMPT = (
     '"people": [...], '
     '"actions": [{"text": ..., "due": "YYYY-MM-DD or null"}]}. '
     "Use null when a field is absent. When a date has no year, assume "
-    "the current year; when it has no time, use 09:00."
+    "the current year; when it has no time, use 09:00. Phrase each "
+    "action as the task to do (verb + object, e.g. 'Pay the $86.40 "
+    "utility bill'), not as a sentence copied from the item."
 )
 
 PLAN_PROMPT = (
