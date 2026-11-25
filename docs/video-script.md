@@ -42,7 +42,12 @@ plumber call is due before Friday). Target pile cost: under $0.05
 
 ## Edit plan
 
-- Voiceover: generated narration (the text in the table above), one track.
+- Voiceover: generated narration (the text in the table above), one track
+  per beat in `demo/voiceover/beat1.mp3` … `beat7.mp3` (Helio voice).
+  Durations verified Nov 24: 11.9 / 7.2 / 12.2 / 8.4 / 11.4 / 10.1 / 5.8 s —
+  each fits its beat window, total ~67 s of narration in the 180 s video.
+  Beat 6 ("less than five cents") is the estimate to re-check against the
+  real live-run cost; re-record that beat alone if the meter says otherwise.
 - Cuts: trim dead time (uploads, agent waits) but keep the traces visible
   long enough to read; the cost meter must be legible in the final frame.
 - Export: 1080p, H.264, under 3:00. Verify the final file plays end to
