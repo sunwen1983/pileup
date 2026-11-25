@@ -4,44 +4,121 @@
 <meta charset="utf-8">
 <title>PileUp — dump the pile in, get a plan out</title>
 <style>
-  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2em auto; padding: 0 1em; color: #222; }
-  h1 { font-size: 1.6em; } .sub { color: #666; margin-top: -0.8em; }
-  button { padding: 0.5em 1em; margin: 0.3em 0.3em 0.3em 0; cursor: pointer; }
-  textarea { width: 100%; height: 3.5em; }
-  .card { border: 1px solid #ddd; border-radius: 8px; padding: 0.8em 1em; margin: 0.6em 0; }
-  .mono { font-family: monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
-  .muted { color: #666; font-size: 0.9em; }
-  #cost { font-size: 1.2em; font-weight: bold; }
+  :root {
+    --bg: #f7f5f2;
+    --card: #ffffff;
+    --ink: #1c1917;
+    --muted: #78716c;
+    --line: #e7e5e4;
+    --teal: #0d9488;
+    --teal-dark: #0f766e;
+    --amber-bg: #fef3c7;
+    --amber-ink: #92400e;
+    --green-bg: #dcfce7;
+    --green-ink: #166534;
+    --red-bg: #fee2e2;
+    --red-ink: #991b1b;
+    --dark: #0f172a;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; max-width: 840px; margin: 0 auto; padding: 2em 1.2em 4em; color: var(--ink); background: var(--bg); }
+  header { display: flex; align-items: baseline; gap: 0.6em; flex-wrap: wrap; }
+  h1 { font-size: 2em; margin: 0; letter-spacing: -0.02em; }
+  h1 .up { color: var(--teal); }
+  .sub { color: var(--muted); margin: 0.3em 0 1.5em; font-size: 1.05em; }
+  .pill { display: inline-block; font-size: 0.8em; font-weight: 600; padding: 0.15em 0.6em; border-radius: 999px; background: var(--green-bg); color: var(--green-ink); vertical-align: middle; }
+  .pill.mock { background: #e7e5e4; color: #57534e; }
+  h2 { font-size: 1.15em; margin: 1.4em 0 0.4em; letter-spacing: -0.01em; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 1em 1.1em; margin: 0.6em 0; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  button { font: inherit; padding: 0.55em 1.1em; margin: 0.3em 0.3em 0.3em 0; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  button:hover { border-color: #d6d3d1; background: #fafaf9; }
+  button.primary { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 600; font-size: 1.05em; padding: 0.7em 1.5em; }
+  button.primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
+  textarea { width: 100%; height: 3.5em; font: inherit; padding: 0.6em; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+  input[type="file"] { font: inherit; }
+  .muted { color: var(--muted); font-size: 0.9em; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
+  /* pile items */
+  .pile-item { display: flex; gap: 0.9em; align-items: center; }
+  .pile-item img.thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); flex-shrink: 0; }
+  .badge { display: inline-block; font-size: 0.72em; font-weight: 700; letter-spacing: 0.05em; padding: 0.2em 0.55em; border-radius: 6px; background: #f0fdfa; color: var(--teal-dark); border: 1px solid #ccfbf1; }
+  .badge.pdf { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+  .badge.audio { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+  .badge.text { background: #f5f5f4; color: #57534e; border-color: #e7e5e4; }
+  .pile-item .name { font-weight: 600; }
+  .pile-item .snippet { color: var(--muted); font-size: 0.9em; margin-top: 0.15em; }
+  /* plan */
+  .plan-card { border-left: 4px solid var(--teal); display: flex; justify-content: space-between; gap: 1em; align-items: center; }
+  .plan-card .action { font-weight: 600; }
+  .due { flex-shrink: 0; font-size: 0.85em; font-weight: 600; padding: 0.25em 0.7em; border-radius: 999px; background: var(--amber-bg); color: var(--amber-ink); white-space: nowrap; }
+  .due.none { background: #f5f5f4; color: var(--muted); }
+  .conflict-card { border-left: 4px solid #dc2626; background: #fff7f7; }
+  .exec-card { border-left: 4px solid #16a34a; }
+  .exec-card .tool { font-weight: 700; color: var(--green-ink); }
+  /* cost meter */
+  .cost-card { display: flex; align-items: center; gap: 1.2em; flex-wrap: wrap; }
+  .cost-big { font-size: 2em; font-weight: 800; letter-spacing: -0.02em; }
+  .cost-bar { flex: 1; min-width: 180px; height: 10px; border-radius: 999px; background: #e7e5e4; overflow: hidden; }
+  .cost-bar > div { height: 100%; background: var(--teal); border-radius: 999px; }
+  /* trace */
+  .trace-card { background: var(--dark); color: #e2e8f0; border-radius: 12px; padding: 1em 1.1em; margin: 0.6em 0; }
+  .trace-card .mono { color: #e2e8f0; }
+  /* extracted fields */
+  .extracted { margin-top: 0.5em; font-size: 0.9em; color: #44403c; }
+  .extracted div { margin: 0.15em 0; }
+  .extracted b { color: var(--ink); }
+  .item-head { display: flex; gap: 0.6em; align-items: baseline; flex-wrap: wrap; }
+  .item-head .conf { color: var(--muted); font-size: 0.85em; }
+  .run-row { display: flex; align-items: center; gap: 1em; flex-wrap: wrap; margin: 1em 0 0.4em; }
+  .run-row label { color: var(--muted); font-size: 0.95em; }
 </style>
 </head>
 <body>
-<h1>PileUp</h1>
-<p class="sub">Dump the pile in. Get a plan out. <span id="transport" class="muted"></span></p>
+<header>
+  <h1>Pile<span class="up">Up</span></h1>
+  <span id="transport" class="pill mock">…</span>
+</header>
+<p class="sub">Dump the pile in. Get a plan out.</p>
 
 <div class="card">
   <div><input type="file" id="files" multiple accept="image/*,application/pdf,audio/*"></div>
-  <div><textarea id="textitem" placeholder="Or paste one item as text, e.g. Science Fair, Dec 12, 9 AM, bring a poster board"></textarea></div>
-  <button id="addtext">Add text item</button>
-  <button id="demo">Load demo pile</button>
-  <button id="clear">Clear pile</button>
-  <div id="pile" class="muted">Pile is empty.</div>
+  <div style="margin-top:0.7em"><textarea id="textitem" placeholder="Or paste one item as text, e.g. Science Fair, Dec 12, 9 AM, bring a poster board"></textarea></div>
+  <div style="margin-top:0.4em">
+    <button id="addtext">Add text item</button>
+    <button id="demo">Load demo pile</button>
+    <button id="clear">Clear pile</button>
+  </div>
+  <div id="pile" class="muted" style="margin-top:0.7em">Pile is empty.</div>
 </div>
 
-<button id="run">Run the pile ▶</button>
-<label><input type="checkbox" id="execute" checked> Execute plan — create calendar events / reminders (mock)</label>
+<div class="run-row">
+  <button id="run" class="primary">Run the pile ▶</button>
+  <label><input type="checkbox" id="execute" checked> Execute plan — create calendar events / reminders (mock)</label>
+</div>
 <div id="cost"></div>
 <div id="results"></div>
-<pre id="trace" class="mono"></pre>
+<div id="tracewrap"></div>
 
 <script>
 let items = [];
 let n = 0;
 const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 function renderPile() {
-  $('pile').textContent = items.length === 0
-    ? 'Pile is empty.'
-    : items.map(i => `• ${i.id} (${i.kind})`).join('\n');
+  const el = $('pile');
+  if (items.length === 0) { el.innerHTML = '<span class="muted">Pile is empty.</span>'; return; }
+  el.innerHTML = items.map(i => {
+    let visual = '';
+    if (i.kind === 'image') visual = `<img class="thumb" src="data:${i.mime};base64,${i.data}" alt="">`;
+    else if (i.kind === 'pdf') visual = `<span class="badge pdf">PDF</span>`;
+    else if (i.kind === 'audio') visual = `<span class="badge audio">AUDIO</span>`;
+    else visual = `<span class="badge text">TEXT</span>`;
+    const name = i.filename ? esc(i.filename) : esc(i.text || i.id);
+    const snippet = i.kind === 'text' ? '' : `<div class="snippet">${esc(i.kind)} · ${esc(i.filename || '')}</div>`;
+    const textSnippet = i.kind === 'text' ? `<div class="snippet">${esc(i.text)}</div>` : '';
+    return `<div class="pile-item">${visual}<div><div class="name">${name}</div>${snippet}${textSnippet}</div></div>`;
+  }).join('');
 }
 function kindFor(file) {
   if (file.type.startsWith('image/')) return 'image';
@@ -78,33 +155,56 @@ $('demo').addEventListener('click', async () => {
   renderPile();
 });
 $('clear').addEventListener('click', () => { items = []; n = 0; renderPile(); });
+
+function fmtDue(due) {
+  if (!due) return '<span class="due none">no date</span>';
+  const d = new Date(due + 'T00:00:00');
+  const label = isNaN(d) ? due : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `<span class="due">${esc(label)}</span>`;
+}
 $('run').addEventListener('click', async () => {
   if (!items.length) { alert('Pile is empty.'); return; }
   $('results').innerHTML = '<p class="muted">Agents working…</p>';
+  $('cost').innerHTML = '';
+  $('tracewrap').innerHTML = '';
   const res = await fetch('/api/run', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ items, execute: $('execute').checked }),
   });
   const out = await res.json();
-  if (!res.ok) { $('results').innerHTML = `<p>Error: ${out.error}</p>`; return; }
-  $('cost').textContent = `Pile cost: $${out.total_cost_usd} (${out.transport})`;
+  if (!res.ok) { $('results').innerHTML = `<p>Error: ${esc(out.error)}</p>`; return; }
+  const cost = out.total_cost_usd;
+  const pct = Math.min(100, (cost / 0.05) * 100).toFixed(1);
+  $('cost').innerHTML =
+    `<div class="card cost-card"><div><div class="cost-big">$${cost.toFixed(4)}</div><div class="muted">pile cost · ${esc(out.transport)}</div></div>` +
+    `<div class="cost-bar"><div style="width:${pct}%"></div></div>` +
+    `<div class="muted">target: under $0.05</div></div>`;
   $('results').innerHTML =
     '<h2>Plan</h2>' + out.plan.actions.map(a =>
-      `<div class="card">• ${a.text} <span class="muted">— due ${a.due || '?'}</span></div>`).join('') +
+      `<div class="card plan-card"><span class="action">${esc(a.text)}</span>${fmtDue(a.due)}</div>`).join('') +
     (out.plan.conflicts.length
       ? '<h2>Conflicts</h2>' + out.plan.conflicts.map(c =>
-        `<div class="card">⚠ ${c.text}</div>`).join('') : '') +
+        `<div class="card conflict-card">⚠ ${esc(c.text)}</div>`).join('') : '') +
     (out.tool_results
       ? '<h2>Executed</h2>' + out.tool_results.map(t =>
-        `<div class="card">✓ ${t.tool}: ${t.result.title || t.result.text} <span class="muted">(id ${t.result.id}, mock)</span></div>`).join('') : '') +
-    (out.tool_error ? `<p>Tool error: ${out.tool_error}</p>` : '') +
-    '<h2>Items</h2>' + out.items.map(i =>
-      `<div class="card"><b>${i.id}</b> — ${i.type} (confidence ${i.confidence})<div class="mono">${JSON.stringify(i.extracted)}</div></div>`).join('');
-  $('trace').textContent = out.ledger.map(r =>
-    `${r.agent}: ${r.input_tokens} in + ${r.output_tokens} out = $${r.cost_usd}`).join('\n');
+        `<div class="card exec-card"><span class="tool">✓ ${esc(t.tool)}</span> — ${esc(t.result.title || t.result.text)} <span class="muted">(id ${t.result.id}, mock)</span></div>`).join('') : '') +
+    (out.tool_error ? `<p>Tool error: ${esc(out.tool_error)}</p>` : '') +
+    '<h2>Items</h2>' + out.items.map(i => {
+      const ex = i.extracted || {};
+      const dates = (ex.dates || []).map(d => `<div>📅 ${esc(d.text)} → <b>${esc(d.iso || '?')}</b></div>`).join('');
+      const amounts = (ex.amounts || []).map(a => `<div>💲 ${esc(a.text)}</div>`).join('');
+      const actions = (ex.actions || []).map(a => `<div>✓ ${esc(a.text)}${a.due ? ` — due <b>${esc(a.due)}</b>` : ''}</div>`).join('');
+      return `<div class="card"><div class="item-head"><b>${esc(i.id)}</b><span class="badge">${esc(i.type || '?')}</span><span class="conf">confidence ${i.confidence}</span></div><div class="extracted">${dates}${amounts}${actions}</div></div>`;
+    }).join('');
+  $('tracewrap').innerHTML =
+    '<h2>Trace</h2><div class="trace-card"><div class="mono">' +
+    out.ledger.map(r => `${esc(r.agent)}: ${r.input_tokens} in + ${r.output_tokens} out = $${r.cost_usd}`).join('\n') +
+    '</div></div>';
 });
 fetch('/api/health').then(r => r.json()).then(h => {
-  $('transport').textContent = `transport: ${h.transport} (mock = canned replies)`;
+  const t = $('transport');
+  t.textContent = 'transport: ' + h.transport;
+  if (h.transport === 'live') { t.classList.remove('mock'); }
 });
 renderPile();
 </script>
