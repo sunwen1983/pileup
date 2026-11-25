@@ -21,8 +21,16 @@ Built for the **Meta Muse Ember Hackathon** (Cerebral Valley, solo, Nov 23–Dec
 Requires a Meta Model API key in `MODEL_API_KEY` (never commit one).
 
 ```bash
+# Tests (stdlib unittest, no live API call)
+python3 -m unittest discover -s tests
+
 # E1 probe (one Ember call, tokens + cost printed)
 python3 scripts/ember_probe.py
 ```
+
+The probe uses `MODEL_API_KEY` when set; on this VM it falls back to the
+registered Meta Model API connection. Note: this VM's egress currently
+blocks api.meta.ai, so live calls run off-VM (fly.io / laptop) until that
+changes — the client, pipeline and tests are transport-agnostic.
 
 See `PLAN.md` for the full spec, milestones and budget guard.
