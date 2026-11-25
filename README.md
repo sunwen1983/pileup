@@ -24,6 +24,13 @@ Requires a Meta Model API key in `MODEL_API_KEY` (never commit one).
 # Tests (stdlib unittest, no live API call)
 python3 -m unittest discover -s tests
 
+# Server (mock transport by default: canned replies, $0.00)
+python3 -m pileup.server
+# open http://127.0.0.1:8000 — load the demo pile, run it, see the plan
+
+# Live Ember (needs a reachable network + a key):
+PILEUP_TRANSPORT=live MODEL_API_KEY=... python3 -m pileup.server
+
 # E1 probe (one Ember call, tokens + cost printed)
 python3 scripts/ember_probe.py
 ```

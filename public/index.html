@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PileUp — dump the pile in, get a plan out</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2em auto; padding: 0 1em; color: #222; }
+  h1 { font-size: 1.6em; } .sub { color: #666; margin-top: -0.8em; }
+  button { padding: 0.5em 1em; margin: 0.3em 0.3em 0.3em 0; cursor: pointer; }
+  textarea { width: 100%; height: 3.5em; }
+  .card { border: 1px solid #ddd; border-radius: 8px; padding: 0.8em 1em; margin: 0.6em 0; }
+  .mono { font-family: monospace; font-size: 0.85em; white-space: pre-wrap; word-break: break-word; }
+  .muted { color: #666; font-size: 0.9em; }
+  #cost { font-size: 1.2em; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>PileUp</h1>
+<p class="sub">Dump the pile in. Get a plan out. <span id="transport" class="muted"></span></p>
+
+<div class="card">
+  <div><input type="file" id="files" multiple accept="image/*,application/pdf,audio/*"></div>
+  <div><textarea id="textitem" placeholder="Or paste one item as text, e.g. Science Fair, Dec 12, 9 AM, bring a poster board"></textarea></div>
+  <button id="addtext">Add text item</button>
+  <button id="demo">Load demo pile</button>
+  <button id="clear">Clear pile</button>
+  <div id="pile" class="muted">Pile is empty.</div>
+</div>
+
+<button id="run">Run the pile ▶</button>
+<div id="cost"></div>
+<div id="results"></div>
+<pre id="trace" class="mono"></pre>
+
+<script>
+let items = [];
+let n = 0;
+const $ = id => document.getElementById(id);
+
+function renderPile() {
+  $('pile').textContent = items.length === 0
+    ? 'Pile is empty.'
+    : items.map(i => `• ${i.id} (${i.kind})`).join('\n');
+}
+function kindFor(file) {
+  if (file.type.startsWith('image/')) return 'image';
+  if (file.type === 'application/pdf') return 'pdf';
+  if (file.type.startsWith('audio/')) return 'audio';
+  return null;
+}
+$('files').addEventListener('change', async e => {
+  for (const file of e.target.files) {
+    const kind = kindFor(file);
+    if (!kind) { alert('Unsupported file: ' + file.name); continue; }
+    const dataUrl = await new Promise(res => {
+      const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(file);
+    });
+    const [, mime, b64] = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+    const item = { id: 'item-' + (++n), kind, data: b64, mime, filename: file.name };
+    if (kind === 'audio') { item.format = (file.name.split('.').pop() || 'mp3').toLowerCase(); }
+    items.push(item);
+  }
+  e.target.value = '';
+  renderPile();
+});
+$('addtext').addEventListener('click', () => {
+  const text = $('textitem').value.trim();
+  if (!text) return;
+  items.push({ id: 'item-' + (++n), kind: 'text', text });
+  $('textitem').value = '';
+  renderPile();
+});
+$('demo').addEventListener('click', async () => {
+  const pile = await (await fetch('/demo/pile.json')).json();
+  items = pile.items;
+  n = items.length;
+  renderPile();
+});
+$('clear').addEventListener('click', () => { items = []; n = 0; renderPile(); });
+$('run').addEventListener('click', async () => {
+  if (!items.length) { alert('Pile is empty.'); return; }
+  $('results').innerHTML = '<p class="muted">Agents working…</p>';
+  const res = await fetch('/api/run', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  const out = await res.json();
+  if (!res.ok) { $('results').innerHTML = `<p>Error: ${out.error}</p>`; return; }
+  $('cost').textContent = `Pile cost: $${out.total_cost_usd} (${out.transport})`;
+  $('results').innerHTML =
+    '<h2>Plan</h2>' + out.plan.actions.map(a =>
+      `<div class="card">• ${a.text} <span class="muted">— due ${a.due || '?'}</span></div>`).join('') +
+    (out.plan.conflicts.length
+      ? '<h2>Conflicts</h2>' + out.plan.conflicts.map(c =>
+        `<div class="card">⚠ ${c.text}</div>`).join('') : '') +
+    '<h2>Items</h2>' + out.items.map(i =>
+      `<div class="card"><b>${i.id}</b> — ${i.type} (confidence ${i.confidence})<div class="mono">${JSON.stringify(i.extracted)}</div></div>`).join('');
+  $('trace').textContent = out.ledger.map(r =>
+    `${r.agent}: ${r.input_tokens} in + ${r.output_tokens} out = $${r.cost_usd}`).join('\n');
+});
+fetch('/api/health').then(r => r.json()).then(h => {
+  $('transport').textContent = `transport: ${h.transport} (mock = canned replies)`;
+});
+renderPile();
+</script>
+</body>
+</html>
