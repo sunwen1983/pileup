@@ -28,6 +28,7 @@
 </div>
 
 <button id="run">Run the pile ▶</button>
+<label><input type="checkbox" id="execute" checked> Execute plan — create calendar events / reminders (mock)</label>
 <div id="cost"></div>
 <div id="results"></div>
 <pre id="trace" class="mono"></pre>
@@ -82,7 +83,7 @@ $('run').addEventListener('click', async () => {
   $('results').innerHTML = '<p class="muted">Agents working…</p>';
   const res = await fetch('/api/run', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items }),
+    body: JSON.stringify({ items, execute: $('execute').checked }),
   });
   const out = await res.json();
   if (!res.ok) { $('results').innerHTML = `<p>Error: ${out.error}</p>`; return; }
@@ -93,6 +94,10 @@ $('run').addEventListener('click', async () => {
     (out.plan.conflicts.length
       ? '<h2>Conflicts</h2>' + out.plan.conflicts.map(c =>
         `<div class="card">⚠ ${c.text}</div>`).join('') : '') +
+    (out.tool_results
+      ? '<h2>Executed</h2>' + out.tool_results.map(t =>
+        `<div class="card">✓ ${t.tool}: ${t.result.title || t.result.text} <span class="muted">(id ${t.result.id}, mock)</span></div>`).join('') : '') +
+    (out.tool_error ? `<p>Tool error: ${out.tool_error}</p>` : '') +
     '<h2>Items</h2>' + out.items.map(i =>
       `<div class="card"><b>${i.id}</b> — ${i.type} (confidence ${i.confidence})<div class="mono">${JSON.stringify(i.extracted)}</div></div>`).join('');
   $('trace').textContent = out.ledger.map(r =>

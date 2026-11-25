@@ -74,6 +74,20 @@ class TestServer(unittest.TestCase):
         dues = [a["due"] for a in body["plan"]["actions"]]
         self.assertEqual(dues, sorted(dues))
 
+    def test_run_execute_creates_tool_results(self):
+        pile = json.loads(
+            (Path(__file__).resolve().parent.parent / "demo" / "pile.json")
+            .read_text())
+        pile["execute"] = True
+        status, body = request(self.server, "POST", "/api/run", pile)
+        self.assertEqual(status, 200)
+        # Both canned plan actions are dated -> two calendar events.
+        self.assertEqual(len(body["tool_results"]), 2)
+        self.assertEqual(body["tool_results"][0]["tool"],
+                         "calendar.create_event")
+        self.assertEqual(body["tool_results"][0]["result"]["title"],
+                         "pay the bill")
+
     def test_run_empty_items_rejected(self):
         status, body = request(self.server, "POST", "/api/run", {"items": []})
         self.assertEqual(status, 400)

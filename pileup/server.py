@@ -22,6 +22,7 @@ from pathlib import Path
 from pileup.client import EmberClient, Ledger
 from pileup.mock import fake_transport
 from pileup.pipeline import run_pile
+from pileup.tools import execute_plan_actions
 from pileup.transport import live_request_fn
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -98,6 +99,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:  # model/transport failure: report, don't crash
             self._send_json(502, {"error": str(exc)})
             return
+        tool_results = None
+        tool_error = None
+        if body.get("execute") and os.environ.get("PILEUP_TOOLS", "on") != "off":
+            try:
+                tool_results = execute_plan_actions(result["plan"]["actions"])
+            except Exception as exc:
+                tool_error = str(exc)
         trace_dir = os.environ.get("PILEUP_TRACE_DIR", "traces")
         path = trace_path(trace_dir)
         with open(path, "a", encoding="utf-8") as handle:
@@ -106,6 +114,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(200, {
             "items": result["items"],
             "plan": result["plan"],
+            "tool_results": tool_results,
+            "tool_error": tool_error,
             "ledger": client.ledger.records,
             "total_cost_usd": round(client.ledger.total(), 6),
             "transport": transport,
