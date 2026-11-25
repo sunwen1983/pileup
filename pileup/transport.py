@@ -29,6 +29,9 @@ try:
 except ImportError:  # off-VM: no authd socket, MODEL_API_KEY is the way in.
     _HAVE_SURROGATE = False
 
+    def read_json_response(response):
+        return json.loads(response.read().decode("utf-8"))
+
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args):
